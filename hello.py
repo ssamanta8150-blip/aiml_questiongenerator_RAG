@@ -18,17 +18,17 @@ from langchain_community.tools import DuckDuckGoSearchRun
 import threading
 from datetime import timedelta
 
-os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+os.environ["USER_AGENT"] = "YOUR WEB BROWSER"
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'msap_exclusive'
-external_db_path = r"D:\Other competitive exams"
+app.config['SECRET_KEY'] = 'NAMELESS_SECRET_KEY'  # Replace with a secure key in production
+external_db_path = r"YOUR EXTERNAL DRIVE PATH"  # Replace with your actual external drive path
 
 # --- UPDATED CONFIGURATION ---
 CONFIG_PATH = os.path.join(external_db_path, "scraper_config.json")
 # Define as string to avoid the TypeError you encountered
-START_DATE_STR = "26/05/2026"
+START_DATE_STR = "DATE TO START SCRAPING FROM"  # e.g., "01/01/2024"
 
 
 bank_folder_path = os.path.join(external_db_path, "Question Bank")
@@ -81,7 +81,7 @@ class DataUploadForm(FlaskForm):
     submit = SubmitField('Upload Content')
 # --- CONFIGURATION & API KEYS ---
 # Replace with your actual keys
-GEMINI_KEYS=["AIzaSyA0CBOynF_jPwmn7MGw1SIR0Guw1D8zGfI", "AIzaSyDwENySKDkZJEr67Qec633KrbOMzmkyjwo", "AIzaSyD1Hoxd-Dj5LeapV7BTtWQhV94QkjuoBMs"]  # 3 Gemini Keys for parallel processing
+GEMINI_KEYS=["YOUR API KEY HERE", "YOUR SECOND API KEY", "YOUR THIRD API KEY"]  # 3 Gemini Keys for parallel processing
 GROQ_KEY_CLEANER = "YOUR_GROQ_KEY"
 
 # Initialize Engines
