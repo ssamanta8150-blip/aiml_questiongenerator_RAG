@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- TOP ROW: Uploader & Quiz Settings -->
+<div class="row g-4 mb-4">
+    <!-- TOP LEFT: Knowledge base (Uploader) -->
+    <div class="col-md-6">
+        <div class="glass-box border-start border-primary border-5">
+            <h5 class="fw-bold text-primary mb-3">📁 CONTENT UPLOADER</h5>
+            <form method="POST" enctype="multipart/form-data">
+                {{ upload_form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    <label class="small fw-bold">Target Bucket</label>
+                    {{ upload_form.category(class="form-select") }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="small fw-bold">Upload PDF File</label>
+                    {{ upload_form.pdf_file(class="form-control") }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="small fw-bold">Or Scrape URL</label>
+                    {{ upload_form.url_link(class="form-control", placeholder="https://example.com/article") }}
+                </div>
+
+                {{ upload_form.submit(class="btn btn-primary w-100 fw-bold shadow-sm") }}
+            </form>
+        </div>
+    </div>
+
+    <!-- TOP RIGHT: Generate Quiz Box -->
+    <div class="col-md-6">
+        <div class="glass-box border-start border-success border-5 h-100 d-flex flex-column justify-content-between">
+                <h5 class="fw-bold text-success mb-3">🚀 QUIZ GENERATOR</h5>
+                <div class="mb-3">
+            <label class="small fw-bold">Number of Questions (N)</label>
+        <input type="number" id="num_questions" class="form-control" value="10">
+    </div>
+
+<!-- NEW: Feedback Mode Selection -->
+    <div class="mb-4">
+            <label class="small fw-bold">Feedback Delivery</label>
+            <select id="quiz_mode" class="form-select">
+            <option value="test">Test Mode (Results only after Submit)</option>
+            <option value="practice">Practice Mode (Immediate Feedback per question)</option>
+        </select>
+    </div>
+
+            <p class="small text-muted"></p>
+            <button onclick="generateQuiz()" class="btn btn-success btn-lg w-100 fw-bold shadow">
+                EXECUTE MSAP PIPELINE
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MIDDLE ROW: The Three Weightage Databases -->
+<div class="row g-3 mb-5">
+    <!-- DAILY BUCKET -->
+<!-- DAILY BUCKET DIVIDED (Corrected) -->
+    <div class="col-md-4">
+        <div class="glass-box border-top border-info border-5 h-100">
+            <div class="text-center mb-3">
+                <p class="small fw-bold text-info mb-0 uppercase">DAILY DATABASE</p>
+                <button type="button" class="btn btn-sm btn-outline-info py-0 mt-1" onclick="toggleAll('daily')">Select All</button>
+            </div>
+
+            <!-- SEGMENT 1: PIB RELEASES (Top) -->
+            <div class="px-2 py-1 bg-light rounded mb-2 border-start border-info border-3">
+                <span class="x-small fw-bold text-dark">🏛️ PIB RELEASES</span>
+            </div>
+            <div class="db-scroll-list mb-4" style="height: 250px; overflow-y: auto;">
+                <ul class="list-group list-group-flush">
+                    {% for item in daily_list if "PIB" in item.content.upper() %}
+                    <li class="list-group-item bg-transparent small py-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <input type="checkbox" class="source-select daily-check me-2" value="{{ item.source_id }}">
+                            <span class="badge bg-info">{{ item.source_id }}</span> 
+                            <span class="text-muted">{{ item.content[:25] }}...</span>
+                        </div>
+                        <a href="/delete/Daily/{{ item.id }}" class="text-danger text-decoration-none">🗑️</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- SEGMENT 2: VAJIRAM & RAVI (Bottom) -->
+            <div class="px-2 py-1 bg-light rounded mb-2 border-start border-primary border-3">
+                <span class="x-small fw-bold text-dark">✍️ VAJIRAM & RAVI</span>
+            </div>
+            <div class="db-scroll-list" style="height: 250px; overflow-y: auto;">
+                <ul class="list-group list-group-flush">
+                    {% for item in daily_list if "VAJIRAM" in item.content.upper() %}
+                    <li class="list-group-item bg-transparent small py-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <input type="checkbox" class="source-select daily-check me-2" value="{{ item.source_id }}">
+                            <span class="badge bg-primary">{{ item.source_id }}</span> 
+                            <span class="text-muted">{{ item.content[:25] }}...</span>
+                        </div>
+                        <a href="/delete/Daily/{{ item.id }}" class="text-danger text-decoration-none">🗑️</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- WEEKLY BUCKET -->
+    <div class="col-md-4">
+        <div class="glass-box border-top border-warning border-5">
+            <div class="text-center mb-3">
+                <p class="small fw-bold text-warning mb-0 uppercase">WEEKLY DB (30%)</p>
+                <button type="button" class="btn btn-sm btn-outline-warning py-0 mt-1" onclick="toggleAll('weekly')">Select All</button>
+            </div>
+            <div class="db-scroll-list">
+                <ul class="list-group list-group-flush">
+                    {% for item in weekly_list %}
+                    <li class="list-group-item bg-transparent small py-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <input type="checkbox" class="source-select weekly-check me-2" value="{{ item.source_id }}">
+                            <span class="badge bg-warning text-dark">{{ item.source_id }}</span> 
+                            <span class="text-muted">{{ item.content[:15] }}...</span>
+                        </div>
+                        <a href="/delete/Weekly/{{ item.id }}" class="text-danger text-decoration-none" onclick="return confirm('Delete source {{ item.source_id }}?')">🗑️</a>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item bg-transparent text-center text-muted small">No Weekly data.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- MONTHLY BUCKET -->
+    <div class="col-md-4">
+        <div class="glass-box border-top border-danger border-5">
+            <div class="text-center mb-3">
+                <p class="small fw-bold text-danger mb-0 uppercase">MONTHLY DB (50%)</p>
+                <button type="button" class="btn btn-sm btn-outline-danger py-0 mt-1" onclick="toggleAll('monthly')">Select All</button>
+            </div>
+            <div class="db-scroll-list">
+                <ul class="list-group list-group-flush">
+                    {% for item in monthly_list %}
+                    <li class="list-group-item bg-transparent small py-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <input type="checkbox" class="source-select monthly-check me-2" value="{{ item.source_id }}">
+                            <span class="badge bg-danger">{{ item.source_id }}</span> 
+                            <span class="text-muted">{{ item.content[:15] }}...</span>
+                        </div>
+                        <a href="/delete/Monthly/{{ item.id }}" class="text-danger text-decoration-none" onclick="return confirm('Delete source {{ item.source_id }}?')">🗑️</a>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item bg-transparent text-center text-muted small">No Monthly data.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GENERATED QUIZ AREA -->
+<div id="quiz-section" style="display: none;">
+    <div class="quiz-card mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <h2 class="fw-bold">Generated Questions</h2>
+            <div id="score-card" class="h4 fw-bold text-primary">SCORE: --</div>
+        </div>
+
+        <div id="questions-list"></div>
+
+        <div class="d-flex justify-content-between mt-5">
+            <button onclick="checkAnswers()" class="btn btn-dark btn-lg px-5">SUBMIT ANSWERS</button>
+            <a href="/download_bank" id="downloadBtn" class="btn btn-warning btn-lg px-5 fw-bold" style="display:none;">
+                📥 DOWNLOAD PDF BANK
+            </a>
+
+            <button id="exitBtn" onclick="terminateSystem()" class="btn btn-danger btn-lg px-5 fw-bold" style="display:none;">
+            🛑 EXIT & SHUTDOWN
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentQuiz = [];
+
+// Helper to toggle selection per bucket
+function toggleAll(category) {
+    const className = category + '-check';
+    const checkboxes = document.querySelectorAll('.' + className);
+    const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+    checkboxes.forEach(cb => cb.checked = anyUnchecked);
+}
+
+async function generateQuiz() {
+    const n = document.getElementById('num_questions').value;
+    
+    // Collect specific IDs from checkboxes
+    const checkboxes = document.querySelectorAll('.source-select:checked');
+    const selected_ids = Array.from(checkboxes).map(cb => cb.value);
+
+    // Visual feedback
+    const genBtn = event.target;
+    const originalText = genBtn.innerText;
+    genBtn.innerText = "Generating Quiz...";
+    genBtn.disabled = true;
+
+    try {
+        const res = await fetch('/generate_quiz', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                n: parseInt(n),
+                selected_ids: selected_ids
+            })
+        });
+        
+        currentQuiz = await res.json();
+        displayQuiz();
+    } catch (err) {
+        alert("Error generating quiz. Check server console.");
+    } finally {
+        genBtn.innerText = originalText;
+        genBtn.disabled = false;
+    }
+}
+
+function displayQuiz() {
+    const quizMode = document.getElementById('quiz_mode').value;
+    document.getElementById('quiz-section').style.display = 'block';
+    const list = document.getElementById('questions-list');
+    list.innerHTML = '';
+    
+    currentQuiz.forEach((q, idx) => {
+        const blockId = `q-block-${idx}`;
+        list.innerHTML += `
+            <div class="mb-4 p-4 border rounded shadow-sm quiz-block" id="${blockId}" style="transition: all 0.3s; background-color: white;">
+                <h5 class="fw-bold d-flex">
+                    <span class="me-2">${idx+1}.</span>
+                    <span class="question-text">${q.question}</span>
+                </h5>
+                <div class="mt-3">
+                    ${q.options.map((opt, optIdx) => {
+                        const uniqueId = `q${idx}_opt${optIdx}`;
+                        // We add an 'onchange' event to handle Practice Mode
+                        return `
+                        <div class="form-check p-0 mb-2">
+                            <label class="d-flex align-items-center p-3 border rounded hover-bg-light cursor-pointer w-100" for="${uniqueId}">
+                                <input class="form-check-input me-3" type="radio" 
+                                    name="q${idx}" id="${uniqueId}" value="${opt.trim()}"
+                                    onchange="handlePracticeFeedback(${idx})">
+                                <span>${opt}</span>
+                            </label>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div id="explanation-${idx}" class="mt-3 p-3 rounded border-start border-4 d-none" style="background-color: #f8f9fa;">
+                    <div class="fw-bold mb-1" id="result-text-${idx}"></div>
+                    <div class="small text-muted"><strong>Reasoning:</strong> ${q.explanation}</div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function handlePracticeFeedback(idx) {
+    const quizMode = document.getElementById('quiz_mode').value;
+    if (quizMode !== 'practice') return; // Do nothing if in Test Mode
+
+    const q = currentQuiz[idx];
+    const selectedInput = document.querySelector(`input[name="q${idx}"]:checked`);
+    const block = document.getElementById(`q-block-${idx}`);
+    const explBox = document.getElementById(`explanation-${idx}`);
+    const resultText = document.getElementById(`result-text-${idx}`);
+
+    if (!selectedInput) return;
+
+    const userAnswer = selectedInput.value.trim();
+    const correctAnswer = q.answer.trim();
+
+    // Show the explanation immediately
+    explBox.classList.remove('d-none');
+
+    if (userAnswer === correctAnswer) {
+        block.style.border = "2px solid #198754";
+        block.style.backgroundColor = "rgba(25, 135, 84, 0.08)";
+        resultText.innerHTML = `<span class="text-success">✓ Correct!</span>`;
+    } else {
+        block.style.border = "2px solid #dc3545";
+        block.style.backgroundColor = "rgba(220, 53, 69, 0.08)";
+        resultText.innerHTML = `<span class="text-danger">✘ Incorrect</span> (Correct: ${correctAnswer})`;
+    }
+
+    // Disable all radio buttons for this question so they can't change it
+    document.querySelectorAll(`input[name="q${idx}"]`).forEach(input => {
+        input.disabled = true;
+    });
+}
+
+function checkAnswers() {
+    let score = 0;
+    const totalQuestions = currentQuiz.length;
+
+    if (totalQuestions === 0) return;
+
+    currentQuiz.forEach((q, idx) => {
+        const selectedInput = document.querySelector(`input[name="q${idx}"]:checked`);
+        const block = document.getElementById(`q-block-${idx}`);
+        const explBox = document.getElementById(`explanation-${idx}`);
+        const resultText = document.getElementById(`result-text-${idx}`);
+
+        // SAFETY CHECK: If the AI failed to render a specific block, skip it instead of crashing
+        if (!block || !explBox || !resultText) return;
+
+        // Show the explanation box
+        explBox.classList.remove('d-none');
+
+        const userAnswer = selectedInput ? selectedInput.value.trim() : "None";
+        const correctAnswer = q.answer.trim();
+
+        if (userAnswer === correctAnswer) {
+            score++;
+            block.style.border = "2px solid #198754";
+            block.style.backgroundColor = "rgba(25, 135, 84, 0.08)";
+            resultText.innerHTML = `<span class="text-success">✓ Correct!</span>`;
+        } else {
+            block.style.border = "2px solid #dc3545";
+            block.style.backgroundColor = "rgba(220, 53, 69, 0.08)";
+            resultText.innerHTML = `<span class="text-danger">✘ Incorrect</span> (Correct: ${correctAnswer})`;
+        }
+    });
+
+    // --- SCORE CALCULATION ---
+    const finalPercent = (score / totalQuestions) * 100;
+    const scoreCard = document.getElementById('score-card');
+    
+    if (scoreCard) {
+        scoreCard.innerHTML = `SCORE: ${finalPercent.toFixed(0)}% (${score}/${totalQuestions})`;
+    }
+
+    // --- BUTTON VISIBILITY LOGIC ---
+    const downloadBtn = document.getElementById('downloadBtn');
+    const exitBtn = document.getElementById('exitBtn');
+
+    // Unlock Download at 60%
+    if (finalPercent >= 60) {
+        if (downloadBtn) {
+            downloadBtn.style.display = 'inline-block';
+            downloadBtn.classList.remove('d-none');
+        }
+        alert("🎉 High Score! Question bank unlocked.");
+    } else {
+        alert(`You scored ${finalPercent.toFixed(0)}%. You need 60% to download the PDF.`);
+    }
+
+    // Show Exit Button if score > 50% (This is what was failing for your 55% score)
+    if (finalPercent >= 50) {
+        if (exitBtn) {
+            exitBtn.style.display = 'inline-block';
+            exitBtn.classList.remove('d-none');
+        }
+    }
+    
+    // Scroll to top to see the score
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function terminateSystem() {
+    // Immediate visual feedback
+    document.body.innerHTML = "<h1>Closing System...</h1>";
+    
+    // Call the Python shutdown
+    try {
+        await fetch('/shutdown', { method: 'POST' });
+    } catch (e) {
+        // The server will stop so fast this error is normal
+    }
+}
+
+</script>
+
+<!-- Scroll to the very bottom of index.html -->
+
+<style>
+    /* Your existing styles */
+    .display-none { display: none; }
+    .fw-black { font-weight: 900; }
+    
+    /* ADD THESE NEW STYLES HERE */
+    .cursor-pointer { 
+        cursor: pointer; 
+    }
+    
+    .hover-bg-light {
+        transition: all 0.2s ease;
+    }
+
+    .hover-bg-light:hover { 
+        background-color: #f1f4f9 !important; 
+        border-color: #0d6efd !important; 
+        transform: translateX(5px);
+    }
+
+    .form-check-input {
+        width: 1.25em;
+        height: 1.25em;
+        margin-top: 0.1em;
+        cursor: pointer;
+        border: 2px solid #dee2e6;
+    }
+
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    /* Ensure the quiz blocks have some spacing */
+    .quiz-block {
+        background-color: white;
+        transition: background-color 0.4s ease;
+    }
+
+    .question-text {
+    white-space: pre-wrap; /* Crucial: respects \n and spaces */
+    display: block;
+    line-height: 1.7;
+    margin-bottom: 15px;
+}
+
+/* Optional: Subtle indentation for the statement block */
+.question-text span {
+    display: block;
+}
+</style>
+
+{% endblock %}
